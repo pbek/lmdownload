@@ -87,19 +87,24 @@ func downloadPDFs() {
 	// find PDFs to download
 	pdfRegExp := regexp.MustCompile(`<a href="(.+\.pdf)">PDF file</a>`)
 	matches := pdfRegExp.FindAllStringSubmatch(string(body[:]), -1)
-	pdfFileNameRegExp := regexp.MustCompile(`[^/]+\.pdf^`)
+	pdfFileNameRegExp := regexp.MustCompile(`[^/]+\.pdf$`)
 	for _, value := range matches {
 		pdfUrl := pageUrl + value[1];
-		log.Printf("Downloading %s...", pdfUrl)
-
 		pdfFileName := pdfFileNameRegExp.FindString(pdfUrl)
-		log.Println(pdfFileName)
+
+		if pdfFileName == "" {
+			log.Fatal("No filename was found in url <%s>", pdfUrl)
+			continue
+		}
+
+		log.Printf("Downloading <%s> as '%s'...", pdfUrl, pdfFileName)
 
 		// download pdf file
 		req = &surfer.Request{
 			Url:          pdfUrl,
 			EnableCookie: true,
 		}
+
 		body, err = req.ReadBody()
 		resp, err = surfer.Download(req)
 
@@ -116,17 +121,18 @@ func downloadPDFs() {
 			continue
 		}
 
-		//log.Println(body)
-
-		err = ioutil.WriteFile("file.pdf", body, 0644)
+		err = ioutil.WriteFile(pdfFileName, body, 0644)
 
 		if err != nil {
 			log.Fatal(err)
 			continue
 		}
 
+		// Todo: remove
 		break
 	}
+
+	log.Println("Done")
 }
 
 /**
@@ -148,8 +154,6 @@ func readUsername() {
 		username, _ = reader.ReadString('\n')
 		username = strings.TrimSpace(username)
 	}
-
-	log.Println(storeSettings)
 
 	if username == "" {
 		log.Fatalf("Please provide a username in ini file '%v' with settings key '%v'", iniPath, usernameSettingsKey)
