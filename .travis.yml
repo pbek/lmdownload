@@ -4,6 +4,13 @@ os: linux
 go:
 - tip
 
+branches:
+  only:
+    - develop
+    - master
+    - testing
+    - /^feature.+$/
+
 script:
 - ./build.sh
 
@@ -21,7 +28,7 @@ deploy:
   on:
     repo: pbek/lmdownload
     branch: master
-    tags: true
+    tags: false
 
 notifications:
   email:
