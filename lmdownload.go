@@ -106,6 +106,11 @@ func downloadPDFs() {
 			continue
 		}
 
+		// check if file already exists
+		if _, err := os.Stat(pdfFileName); err == nil {
+			continue
+		}
+
 		log.Printf("Downloading <%s> as '%s'...", pdfUrl, pdfFileName)
 
 		// download pdf file
@@ -136,9 +141,6 @@ func downloadPDFs() {
 			log.Fatal(err)
 			continue
 		}
-
-		// Todo: remove
-		break
 	}
 
 	log.Println("Done")
