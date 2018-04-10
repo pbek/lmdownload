@@ -23,6 +23,9 @@ const settingsKey = ""
 const usernameSettingsKey = "Username"
 const passwordSettingsKey = "Password"
 
+// this variable will be overwritten in the build process
+var version = "current"
+
 var username string
 var password string
 var cfg *ini.File
@@ -42,9 +45,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	flag.StringVar( &username,"username", "", "Username to Linux Magazine.")
-	flag.StringVar( &password,"password", "", "Password to Linux Magazine.")
+	flag.StringVar( &username,"username", "", "Username to Linux Magazine")
+	flag.StringVar( &password,"password", "", "Password to Linux Magazine")
+	showVersion := flag.Bool( "v", false, "Show version number")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println("Linux Magazine Downloader version: ", version)
+		os.Exit(0)
+	}
 
 	readUsername()
 	readPassword()
