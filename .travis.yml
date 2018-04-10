@@ -1,6 +1,5 @@
-os: linux
-
 language: go
+os: linux
 
 go:
 - tip
@@ -18,3 +17,10 @@ deploy:
     repo: pbek/lmdownload
     branch: master
     tags: false
+
+notifications:
+  email:
+    recipients:
+      - developer@bekerle.com
+    on_success: change
+    on_failure: change
