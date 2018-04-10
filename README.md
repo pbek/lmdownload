@@ -1,4 +1,4 @@
-# Linux Magazine Downloader
+# [Linux Magazine Downloader](https://github.com/pbek/lmdownload)
 
 [Issues](https://github.com/pbek/lmdownload/issues) |
 [Releases](https://github.com/pbek/lmdownload/releases)
