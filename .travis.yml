@@ -7,12 +7,16 @@ go:
 script:
 - ./build.sh
 
+before_deploy:
+  - bzip2 -c bin/lmdownload > bin/lmdownload.bz2
+
 deploy:
   provider: releases
   skip_cleanup: true
   api_key:
     secure: UuHHd8FWVNkjWBeLqtW+vZJfSU2tOiryLFOTLYInaGkatCWcLHtxqWxICi8WKD4P/Du8UvxlUkSmOI9NBuzmiKrcuCrZXFRLb6lq24Zgecd9M8nTxDPMLaZ0+C16ax411L2GoG5psC1ykdw4JbPKr9o+2uVlV9/WiSQUdfc8Yu5f9zbweYXAZ1WF93buh/GarRlfeUaU/vi3hbabJg0jLwKdYnaH7wSKo8vIKCOg2RcnnVNAI6BkGcQOY7LrFSQQiHUO/MDWSTX7bQE+DmQqhU1ROfBSaf1/toHpIMvCHOWO8yc0DzH15IcX4FepdaA7kiYpDwRiHEzUlaF4iQPAN2A+IPeM01hP2XnpN/6EGPP/FT4MjIIQNZhRpNR39dgu6bo0Zxtnv/k+aKTwdf+KaQM96owsJmfAAe1aArHCKEKhuXroJ3j9cFDWmcCXTOnO7QrDgsl6GcQ9g68NkaDABnGz+4dnxitcwS3/wvU2qoioZ6KTdjcQYyI5ksEvwBH1yCv7Q0hEbC+m4cmdu+splM9yayssKDbzVGyEnOQyRcwFZ5r8nU0Bw3w9nfz5s7TggflovJjXsdD0Q7p3ZXq0g6K2p9+fTj4sPfZgPRuA1HmiuIl9vrBIZR1UengjCBeAKnYLLdDaB5XgLVSQEJGb2jlilG6TC80+B3D7fFwAJyI=
   file: bin/lmdownload
+  file: bin/lmdownload.bz2
   on:
     repo: pbek/lmdownload
     branch: master
