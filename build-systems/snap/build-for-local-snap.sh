@@ -17,7 +17,7 @@ BRANCH=develop
 
 PROJECT_PATH="/tmp/lmdownload-local-snap-$$"
 CUR_DIR=$(pwd)
-
+SNAPCRAFT_PATH="build-systems/snap/snapcraft"
 
 echo "Started the Snap building process, using latest '$BRANCH' git tree"
 
@@ -39,7 +39,8 @@ if [ -z $LMDOWNLOAD_VERSION ]; then
     LMDOWNLOAD_VERSION=`cat version`
 fi
 
-cd build-systems/snap/snapcraft
+cp build.sh $SNAPCRAFT_PATH
+cd $SNAPCRAFT_PATH
 
 # replace the version in the snapcraft.yaml file
 sed -i "s/VERSION-STRING/$LMDOWNLOAD_VERSION/g" snapcraft.yaml

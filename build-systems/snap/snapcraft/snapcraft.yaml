@@ -10,21 +10,20 @@ description: |
 apps:
   lmdownload:
     command: bin/lmdownload
-    # see https://developer.ubuntu.com/en/snappy/guides/interfaces
-    plugs: [home, network-bind, removable-media]
+    # see https://docs.snapcraft.io/reference/interfaces
+    plugs: [home, network, removable-media]
 
 parts:
   lmdownload:
     source: .
+    # see https://docs.snapcraft.io/reference/plugins/go
     plugin: go
     go-importpath: github.com/pbek/lmdownload
     build-packages:
       - git
-    stage-packages:
-      - git
     build: |
-      export GOPATH=$(dirname $SNAPCRAFT_PART_INSTALL)/go
-      export PATH=$GOPATH/bin:$PATH
+      #export GOPATH=$(dirname $SNAPCRAFT_PART_INSTALL)/go
+      #export PATH=$GOPATH/bin:$PATH
       ./build.sh
       ./lmdownload -v
     install: |
