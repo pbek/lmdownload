@@ -13,6 +13,7 @@ import (
 	"strings"
 	"golang.org/x/crypto/ssh/terminal"
 	"syscall"
+	"sync"
 )
 
 const pageUrl  = "https://www.linux-magazine.com"
@@ -22,6 +23,7 @@ const iniPath = "lmdownload.ini"
 const settingsKey = ""
 const usernameSettingsKey = "Username"
 const passwordSettingsKey = "Password"
+const concurrentDownloads = 3
 
 // this variable will be overwritten in the build process
 var version = "current"
@@ -31,6 +33,8 @@ var password string
 var cfg *ini.File
 var err error
 var reader *bufio.Reader
+var req *surfer.Request
+var wg sync.WaitGroup
 
 func main() {
 	reader = bufio.NewReader(os.Stdin)
@@ -67,36 +71,45 @@ func downloadPDFs() {
 		"LoginButton": {"Login"},
 		"RedirectURI": {"lnmshop/account"},
 	}
+
 	var form = surfer.Form{Values: values}
 	log.Println("Doing page login and fetching available PDFs...")
-	req := &surfer.Request{
+
+	req = &surfer.Request{
 		Url:          pageUrl + "/user/login",
 		Method:       "POST",
 		Body:         form,
 		EnableCookie: true,
 	}
+
 	body, err := req.ReadBody()
 	resp, err := surfer.Download(req)
+
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
+
 	body, err = ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
+
 	// check if login failed
 	loginFailedRegExp := regexp.MustCompile(`A valid username and password is required to login.`)
 	if loginFailedRegExp.Match(body) {
 		log.Fatal("Login failed! Please check your username/password!")
 		os.Exit(2)
 	}
+
 	// find PDFs to download
 	pdfRegExp := regexp.MustCompile(`<a href="(.+\.pdf)">PDF file</a>`)
 	matches := pdfRegExp.FindAllStringSubmatch(string(body[:]), -1)
 	pdfFileNameRegExp := regexp.MustCompile(`[^/]+\.pdf$`)
+	downloadCount := 0
+
 	for _, value := range matches {
 		pdfUrl := pageUrl + value[1];
 		pdfFileName := pdfFileNameRegExp.FindString(pdfUrl)
@@ -113,37 +126,54 @@ func downloadPDFs() {
 
 		log.Printf("Downloading <%s> as '%s'...", pdfUrl, pdfFileName)
 
-		// download pdf file
-		req = &surfer.Request{
-			Url:          pdfUrl,
-			EnableCookie: true,
-		}
+		wg.Add(1)
+		go downloadPdf(pdfUrl, pdfFileName)
+		downloadCount++
 
-		body, err = req.ReadBody()
-		resp, err = surfer.Download(req)
-
-		if err != nil {
-			log.Fatal(err)
-			continue
-		}
-
-		body, err = ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-
-		if err != nil {
-			log.Fatal(err)
-			continue
-		}
-
-		err = ioutil.WriteFile(pdfFileName, body, 0644)
-
-		if err != nil {
-			log.Fatal(err)
-			continue
+		// download up to concurrentDownloads files at the same time
+		if downloadCount % concurrentDownloads == 0 {
+			wg.Wait()
 		}
 	}
 
+	wg.Wait()
 	log.Println("Done")
+}
+
+/**
+ * Downloads a PDF
+ */
+func downloadPdf(pdfUrl string, pdfFileName string) {
+	defer wg.Done()
+
+	// download pdf file
+	req := &surfer.Request{
+		Url:          pdfUrl,
+		EnableCookie: true,
+	}
+
+	body, err := req.ReadBody()
+	resp, err := surfer.Download(req)
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	body, err = ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	err = ioutil.WriteFile(pdfFileName, body, 0644)
+	
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 }
 
 /**
