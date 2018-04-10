@@ -1,0 +1,10 @@
+os: trusty
+
+language: go
+
+go:
+# the latest version of Go
+- tip
+
+script:
+- "./build.sh"
