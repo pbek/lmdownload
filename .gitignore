@@ -18,3 +18,8 @@
 *.pdf
 bin/
 /lmdownload
+parts/
+prime/
+stage/
+snap/.snapcraft/
+*.snap

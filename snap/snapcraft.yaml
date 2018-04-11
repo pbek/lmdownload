@@ -1,0 +1,31 @@
+name: lmdownload
+version: "18.04.0"
+summary: Linux Magazine PDF downloader for subscribers
+grade: stable
+confinement: strict
+description: |
+  Linux Magazine PDF downloader for subscribers
+  https://github.com/pbek/lmdownload
+
+apps:
+  lmdownload:
+    command: lmdownload
+    # see https://docs.snapcraft.io/reference/interfaces
+    plugs: [home, network, removable-media]
+
+parts:
+  go:
+    source-tag: go1.10.1
+  lmdownload:
+    # see https://docs.snapcraft.io/reference/plugins/go
+    plugin: go
+    source: .
+    go-importpath: github.com/pbek/lmdownload
+    build: |
+      #export GOPATH=$(dirname $SNAPCRAFT_PART_INSTALL)/go
+      #export PATH=$GOPATH/bin:$PATH
+      ./build.sh
+      ./bin/lmdownload -v
+    install: |
+      cp -a ./bin/lmdownload $SNAPCRAFT_PART_INSTALL
+    after: [go]
