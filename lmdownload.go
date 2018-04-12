@@ -14,6 +14,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 	"syscall"
 	"sync"
+	"path/filepath"
 )
 
 const pageUrl  = "https://www.linux-magazine.com"
@@ -169,11 +170,14 @@ func downloadPdf(pdfUrl string, pdfFileName string) {
 	}
 
 	err = ioutil.WriteFile(pdfFileName, body, 0644)
-	
+
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
+
+	file, _ := filepath.Abs(pdfFileName)
+	log.Println("Stored PDF: ", file)
 }
 
 /**
