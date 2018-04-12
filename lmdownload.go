@@ -36,6 +36,7 @@ var err error
 var reader *bufio.Reader
 var req *surfer.Request
 var wg sync.WaitGroup
+var forceLogin bool
 
 func main() {
 	reader = bufio.NewReader(os.Stdin)
@@ -50,8 +51,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	flag.StringVar( &username,"username", "", "Username to Linux Magazine")
-	flag.StringVar( &password,"password", "", "Password to Linux Magazine")
+	flag.StringVar(&username,"username", "", "Username to Linux Magazine")
+	flag.StringVar(&password,"password", "", "Password to Linux Magazine")
+	flag.BoolVar(&forceLogin,"login", false, "Force to enter login data again")
 	showVersion := flag.Bool( "v", false, "Show version number")
 	flag.Parse()
 
@@ -188,16 +190,14 @@ func readUsername() {
 
 	if username == "" {
 		username = cfg.Section(settingsKey).Key(usernameSettingsKey).String()
-
-		if username != "" {
-			storeSettings = false
-		}
 	}
 
-	if username == "" {
+	if username == "" || forceLogin {
 		fmt.Print("Enter Username: ")
 		username, _ = reader.ReadString('\n')
 		username = strings.TrimSpace(username)
+	} else {
+		storeSettings = false
 	}
 
 	if username == "" {
@@ -217,16 +217,15 @@ func readPassword() {
 
 	if password == "" {
 		password = cfg.Section(settingsKey).Key(passwordSettingsKey).String()
-
-		if password != "" {
-			storeSettings = false
-		}
 	}
 
-	if password == "" {
+	if password == "" || forceLogin {
 		fmt.Print("Enter Password: ")
 		bytePassword, _ := terminal.ReadPassword(int(syscall.Stdin))
 		password = strings.TrimSpace(string(bytePassword))
+		fmt.Println()
+	} else {
+		storeSettings = false
 	}
 
 	if password == "" {
