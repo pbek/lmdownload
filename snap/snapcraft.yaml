@@ -1,5 +1,5 @@
 name: lmdownload
-version: "18.04.0"
+version: "18.04.1"
 summary: Linux Magazine PDF downloader for subscribers
 grade: stable
 confinement: strict

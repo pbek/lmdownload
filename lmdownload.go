@@ -15,12 +15,14 @@ import (
 	"syscall"
 	"sync"
 	"path/filepath"
+	"os/user"
 )
 
 const pageUrl  = "https://www.linux-magazine.com"
 
-const iniPath = "lmdownload.ini"
-//const settingsKey = "LinuxMagazine"
+const iniFileName = "lmdownload.ini"
+// will be overwritten by $SNAP_USER_COMMON
+const relativeIniDirectoryPath = ".local/share/lmdownload"
 const settingsKey = ""
 const usernameSettingsKey = "Username"
 const passwordSettingsKey = "Password"
@@ -37,8 +39,20 @@ var reader *bufio.Reader
 var req *surfer.Request
 var wg sync.WaitGroup
 var forceLogin bool
+var iniPath string
 
 func main() {
+	flag.StringVar(&username,"username", "", "Username to Linux Magazine")
+	flag.StringVar(&password,"password", "", "Password to Linux Magazine")
+	flag.BoolVar(&forceLogin,"login", false, "Force to enter login data again")
+	showVersion := flag.Bool( "v", false, "Show version number")
+	flag.Parse()
+
+	if *showVersion {
+		fmt.Println("Linux Magazine Downloader version: ", version)
+		os.Exit(0)
+	}
+
 	reader = bufio.NewReader(os.Stdin)
 
 	if !createIniFileIfNotExists() {
@@ -49,17 +63,6 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to read ini file: ", err)
 		os.Exit(1)
-	}
-
-	flag.StringVar(&username,"username", "", "Username to Linux Magazine")
-	flag.StringVar(&password,"password", "", "Password to Linux Magazine")
-	flag.BoolVar(&forceLogin,"login", false, "Force to enter login data again")
-	showVersion := flag.Bool( "v", false, "Show version number")
-	flag.Parse()
-
-	if *showVersion {
-		fmt.Println("Linux Magazine Downloader version: ", version)
-		os.Exit(0)
 	}
 
 	readUsername()
@@ -201,7 +204,7 @@ func readUsername() {
 	}
 
 	if username == "" {
-		log.Fatalf("Please provide a username in ini file '%v' with settings key '%v'", iniPath, usernameSettingsKey)
+		log.Fatalf("Please provide a username!")
 		os.Exit(1)
 	} else if storeSettings {
 		cfg.Section(settingsKey).Key(usernameSettingsKey).SetValue(username)
@@ -229,7 +232,7 @@ func readPassword() {
 	}
 
 	if password == "" {
-		log.Fatalf("Please provide a password in ini file '%v' with settings key '%v'", iniPath, passwordSettingsKey)
+		log.Fatalf("Please provide a password!")
 		os.Exit(1)
 	} else if storeSettings {
 		cfg.Section(settingsKey).Key(passwordSettingsKey).SetValue(password)
@@ -241,6 +244,32 @@ func readPassword() {
  * Creates the ini file if it doesn't exist
  */
 func createIniFileIfNotExists() bool {
+	var usr *user.User
+
+	usr, err = user.Current()
+	if err != nil {
+		log.Fatal( err )
+		return false
+	}
+
+	// try to use the snap common path for the settings
+	iniDirectoryPath := os.Getenv("SNAP_USER_COMMON")
+
+	if iniDirectoryPath == "" {
+		// set the ini directory path
+		iniDirectoryPath = usr.HomeDir + string(os.PathSeparator) + relativeIniDirectoryPath
+	}
+
+	err = os.MkdirAll(iniDirectoryPath, 0700)
+
+	if err != nil {
+		log.Fatal(err)
+		return false
+	}
+
+	// set the ini path
+	iniPath = iniDirectoryPath + string(os.PathSeparator) + iniFileName
+
 	// detect if file exists
 	var _, err = os.Stat(iniPath)
 
