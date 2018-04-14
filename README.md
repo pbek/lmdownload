@@ -11,7 +11,7 @@ Linux Magazine PDF downloader for subscribers
 
 ## Installation
 
-There is a snap `lmdownload` at the [QOwnNotes uApp Explorer page](https://uappexplorer.com/app/lmdownload).
+There is a snap `lmdownload` at the [lmdownload uApp Explorer page](https://uappexplorer.com/app/lmdownload).
 
 You can install it by typing: `snap install lmdownload`
 
