@@ -13,7 +13,6 @@ import (
 	"strings"
 	"golang.org/x/crypto/ssh/terminal"
 	"syscall"
-	"sync"
 	"path/filepath"
 	"os/user"
 )
@@ -37,7 +36,6 @@ var cfg *ini.File
 var err error
 var reader *bufio.Reader
 var req *surfer.Request
-var wg sync.WaitGroup
 var forceLogin bool
 var iniPath string
 
@@ -114,75 +112,91 @@ func downloadPDFs() {
 	pdfRegExp := regexp.MustCompile(`<a href="(.+\.pdf)">PDF file</a>`)
 	matches := pdfRegExp.FindAllStringSubmatch(string(body[:]), -1)
 	pdfFileNameRegExp := regexp.MustCompile(`[^/]+\.pdf$`)
-	downloadCount := 0
+	jobCount := 0
+	jobs := make(chan [2]string, len(matches))
+	results := make(chan bool, len(matches))
 
+	// start the download workers
+	for w := 1; w <= concurrentDownloads; w++ {
+		go downloadWorker(w, jobs, results)
+	}
+
+	// add the download jobs
 	for _, value := range matches {
 		pdfUrl := pageUrl + value[1];
 		pdfFileName := pdfFileNameRegExp.FindString(pdfUrl)
 
 		if pdfFileName == "" {
-			log.Fatal("No filename was found in url <%s>", pdfUrl)
+			log.Fatalf("No filename was found in url <%s>", pdfUrl)
 			continue
 		}
 
 		// check if file already exists
 		if _, err := os.Stat(pdfFileName); err == nil {
+			log.Println("File already found:", pdfFileName)
 			continue
 		}
 
-		log.Printf("Downloading <%s> as '%s'...", pdfUrl, pdfFileName)
-
-		wg.Add(1)
-		go downloadPdf(pdfUrl, pdfFileName)
-		downloadCount++
-
-		// download up to concurrentDownloads files at the same time
-		if downloadCount % concurrentDownloads == 0 {
-			wg.Wait()
-		}
+		jobs <- [2]string{pdfUrl, pdfFileName}
+		jobCount++
 	}
 
-	wg.Wait()
+	close(jobs)
+
+	// wait for the results
+	for c := 1; c <= jobCount; c++ {
+		<-results
+	}
+
 	log.Println("Done")
 }
 
 /**
- * Downloads a PDF
+ * The download worker downloads PDFs from the job queue
  */
-func downloadPdf(pdfUrl string, pdfFileName string) {
-	defer wg.Done()
+func downloadWorker(id int, jobs <-chan [2]string, results chan<- bool) {
+	for j := range jobs {
+		pdfUrl := j[0]
+		pdfFileName := j[1]
+		log.Println("worker", id, "started to download", pdfUrl)
 
-	// download pdf file
-	req := &surfer.Request{
-		Url:          pdfUrl,
-		EnableCookie: true,
+		// download pdf file
+		req := &surfer.Request{
+			Url:          pdfUrl,
+			EnableCookie: true,
+		}
+
+		body, err := req.ReadBody()
+		resp, err := surfer.Download(req)
+
+		if err != nil {
+			log.Fatal(err)
+			results <- false
+			continue
+		}
+
+		body, err = ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		if err != nil {
+			log.Fatal(err)
+			results <- false
+			continue
+		}
+
+		err = ioutil.WriteFile(pdfFileName, body, 0644)
+
+		if err != nil {
+			log.Fatal(err)
+			results <- false
+			continue
+		}
+
+		file, _ := filepath.Abs(pdfFileName)
+		log.Println("worker", id, "finished job and stored pdf", file)
+
+		results <- true
 	}
-
-	body, err := req.ReadBody()
-	resp, err := surfer.Download(req)
-
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	body, err = ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
-
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	err = ioutil.WriteFile(pdfFileName, body, 0644)
-
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	file, _ := filepath.Abs(pdfFileName)
-	log.Println("Stored PDF: ", file)
 }
 
 /**
