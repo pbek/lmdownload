@@ -38,11 +38,13 @@ var reader *bufio.Reader
 var req *surfer.Request
 var forceLogin bool
 var iniPath string
+var latestOnly bool
 
 func main() {
 	flag.StringVar(&username,"username", "", "Username to Linux Magazine")
 	flag.StringVar(&password,"password", "", "Password to Linux Magazine")
 	flag.BoolVar(&forceLogin,"login", false, "Force to enter login data again")
+	flag.BoolVar(&latestOnly,"latest-only", false, "Download only the latest PDF")
 	showVersion := flag.Bool( "v", false, "Show version number")
 	flag.Parse()
 
@@ -122,8 +124,13 @@ func downloadPDFs() {
 	}
 
 	// add the download jobs
-	for _, value := range matches {
-		pdfUrl := pageUrl + value[1];
+	for matchKey, match := range matches {
+		// break after the first download if we only need the first PDF
+		if latestOnly && matchKey > 0 {
+			break
+		}
+
+		pdfUrl := pageUrl + match[1];
 		pdfFileName := pdfFileNameRegExp.FindString(pdfUrl)
 
 		if pdfFileName == "" {

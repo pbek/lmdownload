@@ -3,6 +3,7 @@
 ## 18.04.2
 - the PDFs are now downloaded with three download workers that will automatically
   pick up a new download if they finished downloading a file
+- added the parameter `--latest-only` to only download the latest PDF
 
 ## 18.04.1
 - settings will now be stored to `~/.local/share/lmdownload/lmdownload.ini`
