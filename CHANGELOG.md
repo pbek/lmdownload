@@ -1,5 +1,8 @@
 # Linux Magazine Downloader Changelog
 
+## 18.04.3
+- added the parameter `--notification-email=your@email.com` to send a notifcation email via `localhost`
+
 ## 18.04.2
 - the PDFs are now downloaded with three download workers that will automatically
   pick up a new download if they finished downloading a file

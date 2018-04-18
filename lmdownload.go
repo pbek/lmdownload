@@ -15,6 +15,8 @@ import (
 	"syscall"
 	"path/filepath"
 	"os/user"
+	"gopkg.in/gomail.v2"
+	"crypto/tls"
 )
 
 const pageUrl  = "https://www.linux-magazine.com"
@@ -39,12 +41,14 @@ var req *surfer.Request
 var forceLogin bool
 var iniPath string
 var latestOnly bool
+var notificationEmail string
 
 func main() {
 	flag.StringVar(&username,"username", "", "Username to Linux Magazine")
 	flag.StringVar(&password,"password", "", "Password to Linux Magazine")
 	flag.BoolVar(&forceLogin,"login", false, "Force to enter login data again")
 	flag.BoolVar(&latestOnly,"latest-only", false, "Download only the latest PDF")
+	flag.StringVar(&notificationEmail,"notification-email", "", "Email address to send notification to")
 	showVersion := flag.Bool( "v", false, "Show version number")
 	flag.Parse()
 
@@ -116,7 +120,7 @@ func downloadPDFs() {
 	pdfFileNameRegExp := regexp.MustCompile(`[^/]+\.pdf$`)
 	jobCount := 0
 	jobs := make(chan [2]string, len(matches))
-	results := make(chan bool, len(matches))
+	results := make(chan string, len(matches))
 
 	// start the download workers
 	for w := 1; w <= concurrentDownloads; w++ {
@@ -149,10 +153,15 @@ func downloadPDFs() {
 	}
 
 	close(jobs)
+	var fileList []string;
 
 	// wait for the results
 	for c := 1; c <= jobCount; c++ {
-		<-results
+		fileList = append(fileList, <-results)
+	}
+
+	if notificationEmail != "" && len(fileList) > 0 {
+		sendNotification(fileList)
 	}
 
 	log.Println("Done")
@@ -161,7 +170,7 @@ func downloadPDFs() {
 /**
  * The download worker downloads PDFs from the job queue
  */
-func downloadWorker(id int, jobs <-chan [2]string, results chan<- bool) {
+func downloadWorker(id int, jobs <-chan [2]string, results chan<- string) {
 	for j := range jobs {
 		pdfUrl := j[0]
 		pdfFileName := j[1]
@@ -178,7 +187,7 @@ func downloadWorker(id int, jobs <-chan [2]string, results chan<- bool) {
 
 		if err != nil {
 			log.Fatal(err)
-			results <- false
+			results <- ""
 			continue
 		}
 
@@ -187,7 +196,7 @@ func downloadWorker(id int, jobs <-chan [2]string, results chan<- bool) {
 
 		if err != nil {
 			log.Fatal(err)
-			results <- false
+			results <- ""
 			continue
 		}
 
@@ -195,14 +204,14 @@ func downloadWorker(id int, jobs <-chan [2]string, results chan<- bool) {
 
 		if err != nil {
 			log.Fatal(err)
-			results <- false
+			results <- ""
 			continue
 		}
 
 		file, _ := filepath.Abs(pdfFileName)
 		log.Println("worker", id, "finished job and stored pdf", file)
 
-		results <- true
+		results <- file
 	}
 }
 
@@ -308,4 +317,32 @@ func createIniFileIfNotExists() bool {
 	}
 
 	return true
+}
+
+/**
+ * Sends a notification email
+ */
+func sendNotification(fileList []string) {
+	body := fmt.Sprintf("%v files were downloaded<ul>", len(fileList))
+
+	for _, file := range fileList {
+		body += "<li>" + file + "</li>"
+	}
+
+	body += "</ul>Your <a href=\"https://github.com/pbek/lmdownload\">Linux Magazine Downloader</a>"
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", notificationEmail)
+	m.SetHeader("To", notificationEmail)
+	m.SetHeader("Subject", "Linux Magazine Downloader")
+	m.SetBody("text/html", body)
+
+	d := gomail.Dialer{Host: "localhost", Port: 25}
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+
+	log.Println("Sending notification email to", notificationEmail, "(check your spam folder)...")
+
+	if err := d.DialAndSend(m); err != nil {
+		log.Fatal(err)
+	}
 }
