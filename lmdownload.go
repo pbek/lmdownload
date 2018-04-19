@@ -17,6 +17,12 @@ import (
 	"os/user"
 	"gopkg.in/gomail.v2"
 	"crypto/tls"
+	"io"
+	"crypto/rand"
+	"crypto/aes"
+	"crypto/cipher"
+	"errors"
+	"encoding/base64"
 )
 
 const pageUrl  = "https://www.linux-magazine.com"
@@ -27,6 +33,7 @@ const relativeIniDirectoryPath = ".local/share/lmdownload"
 const settingsKey = ""
 const usernameSettingsKey = "Username"
 const passwordSettingsKey = "Password"
+const encryptionKeySettingsKey = "Key"
 const concurrentDownloads = 3
 
 // this variable will be overwritten in the build process
@@ -34,6 +41,7 @@ var version = "current"
 
 var username string
 var password string
+var encryptionKey = &[32]byte{}
 var cfg *ini.File
 var err error
 var reader *bufio.Reader
@@ -69,6 +77,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	readEncryptionKey()
 	readUsername()
 	readPassword()
 	downloadPDFs()
@@ -249,7 +258,7 @@ func readPassword() {
 	storeSettings := true
 
 	if password == "" {
-		password = cfg.Section(settingsKey).Key(passwordSettingsKey).String()
+		password = decryptText(cfg.Section(settingsKey).Key(passwordSettingsKey).String())
 	}
 
 	if password == "" || forceLogin {
@@ -265,7 +274,7 @@ func readPassword() {
 		log.Fatalf("Please provide a password!")
 		os.Exit(1)
 	} else if storeSettings {
-		cfg.Section(settingsKey).Key(passwordSettingsKey).SetValue(password)
+		cfg.Section(settingsKey).Key(passwordSettingsKey).SetValue(encryptText(password))
 		cfg.SaveTo(iniPath)
 	}
 }
@@ -345,4 +354,109 @@ func sendNotification(fileList []string) {
 	if err := d.DialAndSend(m); err != nil {
 		log.Fatal(err)
 	}
+}
+
+/**
+ * Loads or generates an stores the encryption key
+ */
+func readEncryptionKey() {
+	keyText := cfg.Section(settingsKey).Key(encryptionKeySettingsKey).String()
+
+	if keyText != "" {
+		key, err := base64.StdEncoding.DecodeString(keyText)
+
+		if err != nil {
+			log.Println("encryption code decode error:", err)
+		} else {
+			copy(encryptionKey[:], key[0:32])
+			return
+		}
+	}
+
+	_, err := io.ReadFull(rand.Reader, encryptionKey[:])
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	keyText = base64.StdEncoding.EncodeToString(encryptionKey[:])
+	cfg.Section(settingsKey).Key(encryptionKeySettingsKey).SetValue(keyText)
+	cfg.SaveTo(iniPath)
+}
+
+func encryptText(text string) string {
+
+	log.Println(encryptionKey)
+
+	ciphertext, err := Encrypt([]byte(text), encryptionKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return base64.StdEncoding.EncodeToString(ciphertext)
+}
+
+func decryptText(cipherText string) string {
+	data, err := base64.StdEncoding.DecodeString(cipherText)
+
+	if err != nil {
+		log.Fatal("base64 decode error:", err)
+		return ""
+	}
+
+	text, err := Decrypt(data, encryptionKey)
+	if err != nil {
+		return ""
+	}
+
+	return string(text)
+}
+
+// Encrypt encrypts data using 256-bit AES-GCM.  This both hides the content of
+// the data and provides a check that it hasn't been altered. Output takes the
+// form nonce|ciphertext|tag where '|' indicates concatenation.
+func Encrypt(plaintext []byte, key *[32]byte) (ciphertext []byte, err error) {
+	block, err := aes.NewCipher(key[:])
+	if err != nil {
+		return nil, err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	_, err = io.ReadFull(rand.Reader, nonce)
+	if err != nil {
+		return nil, err
+	}
+
+	return gcm.Seal(nonce, nonce, plaintext, nil), nil
+}
+
+// Decrypt decrypts data using 256-bit AES-GCM.  This both hides the content of
+// the data and provides a check that it hasn't been altered. Expects input
+// form nonce|ciphertext|tag where '|' indicates concatenation.
+func Decrypt(ciphertext []byte, key *[32]byte) (plaintext []byte, err error) {
+	block, err := aes.NewCipher(key[:])
+	if err != nil {
+		return nil, err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(ciphertext) < gcm.NonceSize() {
+		return nil, errors.New("malformed ciphertext")
+	}
+
+	return gcm.Open(nil,
+		ciphertext[:gcm.NonceSize()],
+		ciphertext[gcm.NonceSize():],
+		nil,
+	)
 }

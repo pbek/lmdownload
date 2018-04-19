@@ -1,5 +1,9 @@
 # Linux Magazine Downloader Changelog
 
+## 18.04.4
+- the password is now stored encrypted in the ini-file
+    - keep in mind that you now will be asked for your password again if you have already stored it
+
 ## 18.04.3
 - added the parameter `--notification-email=your@email.com` to send a notifcation email via `localhost`
 
