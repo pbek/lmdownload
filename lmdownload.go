@@ -386,9 +386,6 @@ func readEncryptionKey() {
 }
 
 func encryptText(text string) string {
-
-	log.Println(encryptionKey)
-
 	ciphertext, err := Encrypt([]byte(text), encryptionKey)
 	if err != nil {
 		log.Fatal(err)
