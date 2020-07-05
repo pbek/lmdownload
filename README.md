@@ -12,7 +12,7 @@ Linux Magazine PDF downloader for subscribers
 ## Installation
 
 Beside the releases at [Releases](https://github.com/pbek/lmdownload/releases) there also is a snap `lmdownload`
-at the [lmdownload uApp Explorer page](https://uappexplorer.com/app/lmdownload).
+in the [snap store](https://snapcraft.io/lmdownload).
 
 You can install it by typing: `snap install lmdownload`
 
