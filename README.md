@@ -9,6 +9,8 @@
 
 Linux Magazine PDF downloader for subscribers
 
+![screenshot](screenshot.png)
+
 ## Installation
 
 Beside the releases at [Releases](https://github.com/pbek/lmdownload/releases) there also is a snap `lmdownload`
