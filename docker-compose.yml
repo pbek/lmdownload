@@ -1,0 +1,20 @@
+version: '3.7'
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Vienna
+      - LM_USERNAME=
+      - LM_PASSWORD=
+    volumes:
+      - ./pdf:/home/app/pdf
+#    command:  ["sh", "-c", "echo \"$LM_USERNAME\"; /bin/lmdownload -username $$LM_USERNAME -password $$LM_PASSWORD --latest-only; ls"]
+    entrypoint: |
+      sh -c 'sh -s <<EOF
+      trap "break;exit" SIGHUP SIGINT SIGTERM
+      while /bin/true; do
+        /bin/lmdownload -username $$LM_USERNAME -password $$LM_PASSWORD --latest-only
+        sleep 5
+      done
+      EOF'
