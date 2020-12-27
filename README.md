@@ -4,7 +4,6 @@
 [Issues](https://github.com/pbek/lmdownload/issues) |
 [Releases](https://github.com/pbek/lmdownload/releases)
 
-[![Build Status Linux / OS X](https://travis-ci.org/pbek/lmdownload.svg?branch=develop)](https://travis-ci.org/pbek/lmdownload)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/pbek/lmdownload.svg)](http://isitmaintained.com/project/pbek/lmdownload "Percentage of issues still open")
 
 Linux Magazine PDF downloader for subscribers
@@ -14,7 +13,7 @@ Linux Magazine PDF downloader for subscribers
 ## Installation
 
 Beside the releases at [Releases](https://github.com/pbek/lmdownload/releases) there also is a snap `lmdownload`
-in the [Snap Store](https://snapcraft.io/lmdownload).
+in the [Snap Store](https://snapcraft.io/lmdownload) and a [docker container](https://hub.docker.com/repository/docker/pbeke/lmdownload).
 
 [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-white.svg)](https://snapcraft.io/lmdownload)
 
