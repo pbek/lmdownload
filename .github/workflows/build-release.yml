@@ -6,10 +6,6 @@ on:
       - master
 #      - develop
 
-defaults:
-  run:
-    working-directory: src
-
 jobs:
   create_release:
     name: Create release
