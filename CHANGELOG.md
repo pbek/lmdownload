@@ -1,5 +1,11 @@
 # Linux Magazine Downloader Changelog
 
+## 20.12.1
+- added the parameter `--smtp-host`
+
+## 20.12.0
+- migration to go modules
+
 ## 18.04.4
 - the password is now stored encrypted in the ini-file
     - keep in mind that you now will be asked for your password again once if you have already stored it

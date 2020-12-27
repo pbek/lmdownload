@@ -1,0 +1,87 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+#      - develop
+
+defaults:
+  run:
+    working-directory: src
+
+jobs:
+  create_release:
+    name: Create release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_id: ${{ steps.create_release.outputs.id }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set Env
+        run: |
+          export VERSION=$(cat version)
+          export TAG=v${VERSION}
+          export RELEASE_TEXT=$(grep -Pzo "## ${VERSION}\n(\n|.)+?\n##" ../CHANGELOG.md | sed '$ d')
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "TAG=${TAG}" >> $GITHUB_ENV
+          # add multiline release text
+          echo "RELEASE_TEXT<<EOF" >> $GITHUB_ENV
+          echo "${RELEASE_TEXT}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+      - name: Printenv
+        run: |
+          echo "VERSION=${VERSION}"
+          echo "TAG=${TAG}"
+          echo "RELEASE_TEXT=${RELEASE_TEXT}"
+          printenv
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.TAG }}
+          release_name: Release v${{ env.VERSION }}
+          body: ${{ env.RELEASE_TEXT }}
+          draft: true
+          prerelease: false
+
+  build:
+    needs: create_release
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2	
+      with:	
+        submodules: true
+    - name: Set up Go
+      uses: actions/setup-go@v2
+    - name: Build
+      run: ./build.sh
+
+    #
+    # Release lmdownload
+    #
+
+    - name: Release binary
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
+        asset_path: ./bin/lmdownload
+        asset_name: lmdownload
+        asset_content_type: application/x-executable
+
+  publish_release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    needs: [create_release, build]
+    steps:
+    - name: Publish draft release
+      uses: eregon/publish-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        release_id: ${{ needs.create_release.outputs.release_id }}
