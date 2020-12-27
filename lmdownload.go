@@ -50,6 +50,7 @@ var forceLogin bool
 var iniPath string
 var latestOnly bool
 var notificationEmail string
+var smtpHost string
 
 func main() {
 	flag.StringVar(&username,"username", "", "Username to Linux Magazine")
@@ -57,6 +58,7 @@ func main() {
 	flag.BoolVar(&forceLogin,"login", false, "Force to enter login data again")
 	flag.BoolVar(&latestOnly,"latest-only", false, "Download only the latest PDF")
 	flag.StringVar(&notificationEmail,"notification-email", "", "Email address to send notification to")
+	flag.StringVar(&smtpHost,"smtp-host", "localhost", "SMTP server to send emails")
 	showVersion := flag.Bool( "v", false, "Show version number")
 	flag.Parse()
 
@@ -346,7 +348,7 @@ func sendNotification(fileList []string) {
 	m.SetHeader("Subject", "Linux Magazine Downloader")
 	m.SetBody("text/html", body)
 
-	d := gomail.Dialer{Host: "localhost", Port: 25}
+	d := gomail.Dialer{Host: smtpHost, Port: 25}
 	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 
 	log.Println("Sending notification email to", notificationEmail, "(check your spam folder)...")
