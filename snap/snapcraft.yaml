@@ -16,7 +16,6 @@ apps:
 
 parts:
   go:
-    source-tag: go1.10.1
   lmdownload:
     # see https://docs.snapcraft.io/reference/plugins/go
     plugin: go
