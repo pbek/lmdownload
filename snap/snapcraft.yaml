@@ -35,8 +35,6 @@ parts:
     source: .
     build-snaps: [go]
     override-build: |
-      export GOBIN=$SNAPCRAFT_PART_INSTALL/bin
-      export GO111MODULE=on
       export VERSION_NUMBER=`cat version`
       go build -ldflags "-X main.version=$VERSION_NUMBER" -o $SNAPCRAFT_PART_INSTALL/bin/lmdownload -i .
       find $SNAPCRAFT_PART_INSTALL
