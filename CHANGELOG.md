@@ -1,5 +1,8 @@
 # Linux Magazine Downloader Changelog
 
+## 21.1.0
+- added the parameter `--from-email=your@email.com` to declare from which address emails are sent from
+
 ## 20.12.1
 - added the parameter `--smtp-host`
 

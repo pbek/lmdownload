@@ -50,6 +50,7 @@ var forceLogin bool
 var iniPath string
 var latestOnly bool
 var notificationEmail string
+var fromEmail string
 var smtpHost string
 
 func main() {
@@ -58,6 +59,7 @@ func main() {
 	flag.BoolVar(&forceLogin,"login", false, "Force to enter login data again")
 	flag.BoolVar(&latestOnly,"latest-only", false, "Download only the latest PDF")
 	flag.StringVar(&notificationEmail,"notification-email", "", "Email address to send notification to")
+	flag.StringVar(&fromEmail,"from-email", notificationEmail, "Email address to send notifications from")
 	flag.StringVar(&smtpHost,"smtp-host", "localhost", "SMTP server to send emails")
 	showVersion := flag.Bool( "v", false, "Show version number")
 	flag.Parse()
@@ -343,7 +345,7 @@ func sendNotification(fileList []string) {
 	body += "</ul>Your <a href=\"https://github.com/pbek/lmdownload\">Linux Magazine Downloader</a>"
 
 	m := gomail.NewMessage()
-	m.SetHeader("From", notificationEmail)
+	m.SetHeader("From", fromEmail)
 	m.SetHeader("To", notificationEmail)
 	m.SetHeader("Subject", "Linux Magazine Downloader")
 	m.SetBody("text/html", body)
