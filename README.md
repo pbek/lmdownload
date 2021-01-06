@@ -28,3 +28,37 @@ openSUSE, Gentoo Linux, OpenWRT, open embedded and yocto project.
 
 Please note that you are only able to download PDF files to your home-directory if you are installing the snap
 (unless you are breaking out of the confinement by running `/snap/lmdownload/current/lmdownload` directly).
+
+## Docker Compose
+
+This is an example to run lmdownload every 12h with [Docker Compose](https://docs.docker.com/compose/): 
+
+```yaml
+version: '3.7'
+services:
+  # https://github.com/pbek/lmdownload
+  lmdownload:
+    image: pbeke/lmdownload
+    restart: always
+    depends_on:
+      - smtp
+    environment:
+      - LM_USERNAME=user
+      - LM_PASSWORD=pass
+    volumes:
+      # local folder must be owned by uid 1000!
+      - /home/user/Media/Magazines/Linux-Magazine:/home/app/pdf
+    entrypoint: |
+      sh -c 'sh -s <<EOF
+      trap "break;exit" SIGHUP SIGINT SIGTERM
+      while /bin/true; do
+        /bin/lmdownload -username $$LM_USERNAME -password $$LM_PASSWORD -notification-email $$LM_USERNAME -from-email noreply@example.com -smtp-host=smtp
+        sleep 43200
+      done
+      EOF'
+
+  # https://github.com/namshi/docker-smtp
+  smtp:
+    image: namshi/smtp
+    restart: always
+```
