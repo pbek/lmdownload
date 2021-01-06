@@ -37,5 +37,3 @@ parts:
     override-build: |
       export VERSION_NUMBER=`cat version`
       go build -ldflags "-X main.version=$VERSION_NUMBER" -o $SNAPCRAFT_PART_INSTALL/bin/lmdownload -i .
-      find $SNAPCRAFT_PART_INSTALL
-      echo "Done building"
