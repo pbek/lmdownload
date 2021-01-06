@@ -38,7 +38,6 @@ parts:
       export GOBIN=$SNAPCRAFT_PART_INSTALL/bin
       export GO111MODULE=on
       export CGO_ENABLED=0
-      ./build.sh
+      export VERSION_NUMBER=`cat version`
       go build -ldflags "-X main.version=$VERSION_NUMBER"
       find $SNAPCRAFT_PART_INSTALL
-      $SNAPCRAFT_PART_INSTALL/bin/lmdownload -v
