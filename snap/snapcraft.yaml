@@ -39,5 +39,5 @@ parts:
       export GO111MODULE=on
       export CGO_ENABLED=0
       ./build.sh
-      ./bin/lmdownload -v
-      cp -a ./bin/lmdownload $SNAPCRAFT_PART_INSTALL
+      find $SNAPCRAFT_PART_INSTALL
+      $SNAPCRAFT_PART_INSTALL/bin/lmdownload -v
