@@ -15,17 +15,30 @@ apps:
     plugs: [home, network, removable-media]
 
 parts:
-  go:
+#  go:
+#  lmdownload:
+#    # see https://snapcraft.io/docs/go-plugin
+#    plugin: go
+#    source: .
+#    go-importpath: github.com/pbek/lmdownload
+#    build: |
+#      #export GOPATH=$(dirname $SNAPCRAFT_PART_INSTALL)/go
+#      #export PATH=$GOPATH/bin:$PATH
+#      ./build.sh
+#      ./bin/lmdownload -v
+#    install: |
+#      cp -a ./bin/lmdownload $SNAPCRAFT_PART_INSTALL
+#    after: [go]
+
   lmdownload:
-    # see https://docs.snapcraft.io/reference/plugins/go
-    plugin: go
+    plugin: nil
     source: .
-    go-importpath: github.com/pbek/lmdownload
-    build: |
-      #export GOPATH=$(dirname $SNAPCRAFT_PART_INSTALL)/go
-      #export PATH=$GOPATH/bin:$PATH
+    build-snaps: [go]
+    override-build: |
+      export GOBIN=$SNAPCRAFT_PART_INSTALL/bin
+      export GO111MODULE=on
+      export CGO_ENABLED=0
       ./build.sh
       ./bin/lmdownload -v
     install: |
       cp -a ./bin/lmdownload $SNAPCRAFT_PART_INSTALL
-    after: [go]
