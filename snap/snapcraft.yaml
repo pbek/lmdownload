@@ -37,7 +37,6 @@ parts:
     override-build: |
       export GOBIN=$SNAPCRAFT_PART_INSTALL/bin
       export GO111MODULE=on
-      export CGO_ENABLED=0
       export VERSION_NUMBER=`cat version`
-      go build -ldflags "-X main.version=$VERSION_NUMBER"
+      go build -ldflags "-X main.version=$VERSION_NUMBER" -i
       find $SNAPCRAFT_PART_INSTALL
