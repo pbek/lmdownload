@@ -40,5 +40,4 @@ parts:
       export CGO_ENABLED=0
       ./build.sh
       ./bin/lmdownload -v
-    install: |
       cp -a ./bin/lmdownload $SNAPCRAFT_PART_INSTALL
