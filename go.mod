@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/go-ini/ini v1.62.0
 	github.com/henrylee2cn/surfer v1.2.3
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )
 
